@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapkeeper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">Mapkeeper</h1>
+            <div class="controls">
+                <button id="upload-btn" class="btn btn-secondary">Upload Kindle</button>
+                <button id="settings-btn" class="btn btn-secondary">Settings</button>
+                <button id="export-btn" class="btn btn-secondary">Export Path</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Chat Stream (Left) -->
+            <section class="chat-section">
+                <div class="chat-container">
+                    <div id="chat-messages" class="chat-messages">
+                        <div class="welcome-message">
+                            <h2>Welcome to Mapkeeper</h2>
+                            <p>I'll guide you through your quotes, one waypoint at a time. Upload your Kindle highlights to begin exploring.</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Ask about a topic or accept the suggestion..." disabled>
+                        <button id="send-btn" class="btn btn-primary" disabled>Send</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Path Strip (Right) -->
+            <aside class="path-section">
+                <div class="path-header">
+                    <h3>Your Path</h3>
+                    <span id="path-count" class="path-count">0 waypoints</span>
+                </div>
+                <div id="path-container" class="path-container">
+                    <div class="empty-path">
+                        <p>Your journey will appear here as you accept quotes</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Suggestion Modal -->
+        <div id="suggestion-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="suggestion-header">
+                    <h3 id="suggestion-title">Next Waypoint</h3>
+                    <button id="close-suggestion" class="close-btn">&times;</button>
+                </div>
+                <div class="suggestion-body">
+                    <blockquote id="suggestion-quote" class="suggestion-quote">
+                        <!-- Quote will be inserted here -->
+                    </blockquote>
+                    <div id="suggestion-meta" class="suggestion-meta">
+                        <!-- Author, book, etc. -->
+                    </div>
+                    <div id="suggestion-rationale" class="suggestion-rationale">
+                        <!-- AI rationale will appear here -->
+                    </div>
+                </div>
+                <div class="suggestion-actions">
+                    <button id="accept-btn" class="btn btn-primary">Accept</button>
+                    <button id="new-suggestion-btn" class="btn btn-secondary">New Suggestion</button>
+                    <button id="why-this-btn" class="btn btn-tertiary">Why this?</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button id="close-settings" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setting-group">
+                        <label for="model-select">Model</label>
+                        <select id="model-select">
+                            <option value="gpt-4o-mini">GPT-4o Mini</option>
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label for="temperature-slider">Temperature: <span id="temperature-value">0.7</span></label>
+                        <input type="range" id="temperature-slider" min="0" max="1" step="0.1" value="0.7">
+                    </div>
+                    <div class="setting-group">
+                        <label for="max-tokens">Max Tokens</label>
+                        <input type="number" id="max-tokens" value="150" min="50" max="500">
+                    </div>
+                    <div class="setting-group">
+                        <label for="system-prompt">System Prompt</label>
+                        <textarea id="system-prompt" rows="8" placeholder="Enter your custom system prompt...">You are Mapkeeper, a thoughtful guide through a personal library of quotes and highlights. Your role is to suggest meaningful connections between ideas, helping users discover unexpected pathways through their own collected wisdom.
+
+When suggesting a quote, provide:
+1. A brief, compelling title for why this quote connects
+2. A concise rationale (2-3 sentences) explaining the connection
+3. Labels indicating the type of connection: "adjacent" (closely related), "oblique" (unexpected angle), or "wildcard" (surprising leap)
+
+Be curious, insightful, and respectful of the personal nature of these collected thoughts.</textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="save-settings" class="btn btn-primary">Save Settings</button>
+                    <button id="reset-settings" class="btn btn-secondary">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Modal -->
+        <div id="upload-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Upload Kindle Highlights</h3>
+                    <button id="close-upload" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-icon">📚</div>
+                        <p>Drop your Kindle highlights file here or click to browse</p>
+                        <p style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.5rem;">
+                            Supports: "My Clippings.txt" or CSV exports<br>
+                            CSV columns: Highlight, Book Title, Book Author, etc.
+                        </p>
+                        <input type="file" id="file-input" accept=".txt,.csv" hidden>
+                        <button id="browse-btn" class="btn btn-secondary">Browse Files</button>
+                    </div>
+                    <div id="upload-progress" class="upload-progress hidden">
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <p id="progress-text">Processing highlights...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p>Thinking...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
+

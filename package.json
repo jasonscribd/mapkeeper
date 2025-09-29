@@ -1,0 +1,40 @@
+{
+  "name": "mapkeeper",
+  "version": "1.0.0",
+  "description": "A single-screen chat interface for exploring your Kindle highlights through AI-guided waypoints",
+  "main": "public/index.html",
+  "scripts": {
+    "dev": "python -m http.server 8080 --directory public",
+    "build": "echo 'Static site - no build needed'",
+    "parse-kindle": "python scripts/parse_kindle.py",
+    "build-graph": "python scripts/build_graph.py data/quotes.jsonl data/neighbors.json",
+    "setup": "pip install -r requirements.txt",
+    "deploy": "echo 'Deploy to your preferred static hosting service'"
+  },
+  "keywords": [
+    "kindle",
+    "highlights",
+    "quotes",
+    "ai",
+    "chat",
+    "exploration",
+    "knowledge-graph"
+  ],
+  "author": "Mapkeeper",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/mapkeeper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/mapkeeper/issues"
+  },
+  "homepage": "https://github.com/yourusername/mapkeeper#readme",
+  "devDependencies": {},
+  "dependencies": {},
+  "engines": {
+    "python": ">=3.8"
+  }
+}
+
+

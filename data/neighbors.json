@@ -1,0 +1,7 @@
+{
+  "quote_000001": ["quote_000002", "quote_000003", "quote_000004", "quote_000005"],
+  "quote_000002": ["quote_000001", "quote_000004", "quote_000005", "quote_000003"],
+  "quote_000003": ["quote_000001", "quote_000005", "quote_000002", "quote_000004"],
+  "quote_000004": ["quote_000002", "quote_000005", "quote_000001", "quote_000003"],
+  "quote_000005": ["quote_000001", "quote_000002", "quote_000004", "quote_000003"]
+}

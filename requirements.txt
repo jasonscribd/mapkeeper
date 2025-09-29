@@ -1,0 +1,14 @@
+# Core dependencies for Mapkeeper
+sentence-transformers>=2.2.0
+numpy>=1.21.0
+scikit-learn>=1.0.0
+
+# Optional dependencies for enhanced functionality
+torch>=1.9.0
+transformers>=4.20.0
+
+# Development and utility dependencies
+requests>=2.28.0
+pathlib>=1.0.0
+
+
