@@ -534,8 +534,11 @@ Respond only with valid JSON.`
             
             return `
                 <div class="path-item" data-index="${index}">
-                    <div class="path-item-quote">"${quote.text}"</div>
-                    <div class="path-item-meta">${metaText}</div>
+                    <div class="path-item-content">
+                        <div class="path-item-quote">"${quote.text}"</div>
+                        <div class="path-item-meta">${metaText}</div>
+                    </div>
+                    <button class="path-item-delete" onclick="mapkeeper.deletePathItem(${index})" title="Remove from path">×</button>
                 </div>
             `;
         }).join('');
@@ -978,6 +981,28 @@ Be curious, insightful, and respectful of the personal nature of these collected
         this.loadSettingsToForm();
         localStorage.removeItem('mapkeeper-settings');
         this.addMessage('assistant', 'Settings reset to defaults.');
+    }
+
+    deletePathItem(index) {
+        if (index < 0 || index >= this.path.length) return;
+        
+        const quote = this.path[index];
+        const confirmMessage = `Are you sure you want to remove this quote from your path?\n\n"${quote.text.substring(0, 100)}${quote.text.length > 100 ? '...' : ''}"\n\n— ${quote.author || 'Unknown Author'}`;
+        
+        if (confirm(confirmMessage)) {
+            // Remove the quote from the path
+            this.path.splice(index, 1);
+            
+            // Remove from recent picks so it can be suggested again
+            this.recentPicks.delete(quote.id);
+            
+            // Update displays
+            this.updatePathDisplay();
+            this.savePath();
+            
+            // Add a message to chat
+            this.addMessage('assistant', `Removed "${quote.text.substring(0, 50)}${quote.text.length > 50 ? '...' : ''}" from your path.`);
+        }
     }
 
     savePath() {
