@@ -389,6 +389,12 @@ body {
 }
 
 /* Enhanced metadata styling */
+.quote-date {
+    color: #8e44ad;
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
 .quote-tags {
     color: #e67e22;
     font-weight: 500;

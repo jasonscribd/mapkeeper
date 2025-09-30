@@ -444,6 +444,12 @@ Respond only with valid JSON.`
             metaHtml += `<br>${locType} ${quote.location}`;
         }
         
+        // Highlight date (from CSV)
+        if (quote.added_at) {
+            const date = this.formatHighlightDate(quote.added_at);
+            metaHtml += `<br><span class="quote-date">📅 Highlighted ${date}</span>`;
+        }
+        
         // Tags (from CSV)
         if (quote.tags && quote.tags.length > 0) {
             metaHtml += `<br><span class="quote-tags">🏷️ ${quote.tags.join(', ')}</span>`;
@@ -510,9 +516,15 @@ Respond only with valid JSON.`
         this.pathContainer.innerHTML = this.path.map((quote, index) => {
             let metaText = `${quote.author || 'Unknown'} • ${quote.book_title || 'Unknown Book'}`;
             
-            // Add tags if available
+            // Add highlight date if available
+            if (quote.added_at) {
+                const date = this.formatHighlightDate(quote.added_at);
+                metaText += ` • 📅 ${date}`;
+            }
+            
+            // Add tags if available (limit to 1-2 for space)
             if (quote.tags && quote.tags.length > 0) {
-                metaText += ` • 🏷️ ${quote.tags.slice(0, 2).join(', ')}${quote.tags.length > 2 ? '...' : ''}`;
+                metaText += ` • 🏷️ ${quote.tags.slice(0, 1).join(', ')}${quote.tags.length > 1 ? '...' : ''}`;
             }
             
             // Add color if available
@@ -856,6 +868,10 @@ Respond only with valid JSON.`
             
             // Additional metadata from CSV
             const metadata = [];
+            if (quote.added_at) {
+                const date = this.formatHighlightDate(quote.added_at);
+                metadata.push(`**Highlighted:** ${date}`);
+            }
             if (quote.tags && quote.tags.length > 0) {
                 metadata.push(`**Tags:** ${quote.tags.join(', ')}`);
             }
@@ -966,6 +982,58 @@ Be curious, insightful, and respectful of the personal nature of these collected
 
     savePath() {
         localStorage.setItem('mapkeeper-path', JSON.stringify(this.path));
+    }
+
+    formatHighlightDate(dateString) {
+        if (!dateString) return '';
+        
+        try {
+            // Handle various date formats
+            let date;
+            
+            // Try parsing as ISO string first
+            if (dateString.includes('T') || dateString.includes('-')) {
+                date = new Date(dateString);
+            } else {
+                // Try parsing other formats
+                date = new Date(dateString);
+            }
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return dateString; // Return original string if can't parse
+            }
+            
+            // Format as readable date
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Show relative time for recent dates
+            if (diffDays === 0) {
+                return 'today';
+            } else if (diffDays === 1) {
+                return 'yesterday';
+            } else if (diffDays < 7) {
+                return `${diffDays} days ago`;
+            } else if (diffDays < 30) {
+                const weeks = Math.floor(diffDays / 7);
+                return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+            } else if (diffDays < 365) {
+                const months = Math.floor(diffDays / 30);
+                return `${months} month${months > 1 ? 's' : ''} ago`;
+            } else {
+                // For older dates, show the actual date
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+        } catch (error) {
+            console.warn('Error formatting date:', dateString, error);
+            return dateString; // Return original string if error
+        }
     }
 
     hashString(str) {
