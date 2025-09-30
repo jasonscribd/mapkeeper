@@ -70,8 +70,7 @@
                 </div>
                 <div class="suggestion-actions">
                     <button id="accept-btn" class="btn btn-primary">Accept</button>
-                    <button id="new-suggestion-btn" class="btn btn-secondary">New Suggestion</button>
-                    <button id="why-this-btn" class="btn btn-tertiary">Why this?</button>
+                    <button id="new-suggestion-btn" class="btn btn-secondary">Try Again</button>
                 </div>
             </div>
         </div>
@@ -99,6 +98,13 @@
                     <div class="setting-group">
                         <label for="max-tokens">Max Tokens</label>
                         <input type="number" id="max-tokens" value="150" min="50" max="500">
+                    </div>
+                    <div class="setting-group">
+                        <label for="openai-api-key">OpenAI API Key</label>
+                        <input type="password" id="openai-api-key" placeholder="sk-..." autocomplete="off">
+                        <small style="color: #7f8c8d; font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                            Required for AI suggestions. Get yours at <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a>
+                        </small>
                     </div>
                     <div class="setting-group">
                         <label for="system-prompt">System Prompt</label>

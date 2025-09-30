@@ -42,13 +42,13 @@ class Mapkeeper {
         this.suggestionRationale = document.getElementById('suggestion-rationale');
         this.acceptBtn = document.getElementById('accept-btn');
         this.newSuggestionBtn = document.getElementById('new-suggestion-btn');
-        this.whyThisBtn = document.getElementById('why-this-btn');
         
         // Settings elements
         this.modelSelect = document.getElementById('model-select');
         this.temperatureSlider = document.getElementById('temperature-slider');
         this.temperatureValue = document.getElementById('temperature-value');
         this.maxTokensInput = document.getElementById('max-tokens');
+        this.openaiApiKeyInput = document.getElementById('openai-api-key');
         this.systemPromptTextarea = document.getElementById('system-prompt');
         
         // Upload elements
@@ -80,7 +80,6 @@ class Mapkeeper {
         // Suggestion modal events
         this.acceptBtn.addEventListener('click', () => this.acceptSuggestion());
         this.newSuggestionBtn.addEventListener('click', () => this.getNewSuggestion());
-        this.whyThisBtn.addEventListener('click', () => this.explainSuggestion());
         
         // Settings events
         this.temperatureSlider.addEventListener('input', (e) => {
@@ -330,34 +329,97 @@ class Mapkeeper {
             return this.cache.get(cacheKey);
         }
         
+        // Check if API key is available
+        if (!this.settings.openaiApiKey || !this.settings.openaiApiKey.startsWith('sk-')) {
+            return {
+                title: 'Connected Ideas',
+                rationale: 'Add your OpenAI API key in Settings to get AI-powered connection explanations.',
+                labels: ['adjacent']
+            };
+        }
+        
         try {
-            const response = await fetch('/api/mapkeeper/suggest', {
+            const messages = [
+                {
+                    role: 'system',
+                    content: this.settings.systemPrompt
+                },
+                {
+                    role: 'user',
+                    content: `I'm exploring this quote:
+"${seed?.text || 'Starting my journey'}"
+${seed?.author ? `— ${seed.author}` : ''}
+${seed?.book_title ? `, ${seed.book_title}` : ''}
+
+You're suggesting this next quote:
+"${suggestion.text}"
+${suggestion.author ? `— ${suggestion.author}` : ''}
+${suggestion.book_title ? `, ${suggestion.book_title}` : ''}
+
+Please provide a JSON response with:
+- title: A compelling connection title (max 50 characters)
+- rationale: Why this quote connects (2-3 sentences)
+- labels: Array of connection types ["adjacent"|"oblique"|"wildcard"]
+
+Respond only with valid JSON.`
+                }
+            ];
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Authorization': `Bearer ${this.settings.openaiApiKey}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
-                    seed: seed,
-                    suggestion: suggestion,
-                    systemPrompt: this.settings.systemPrompt,
                     model: this.settings.model,
+                    messages: messages,
                     temperature: this.settings.temperature,
-                    maxTokens: this.settings.maxTokens
+                    max_tokens: this.settings.maxTokens,
+                    response_format: { type: 'json_object' }
                 })
             });
             
             if (!response.ok) {
-                throw new Error('API request failed');
+                const errorData = await response.text();
+                console.error('OpenAI API error:', errorData);
+                throw new Error(`API request failed: ${response.status}`);
             }
             
             const result = await response.json();
-            this.cache.set(cacheKey, result.suggestion);
-            return result.suggestion;
+            const content = result.choices[0].message.content;
+            
+            try {
+                const parsed = JSON.parse(content);
+                const rationale = {
+                    title: parsed.title || 'Connected Ideas',
+                    rationale: parsed.rationale || 'These quotes share interesting connections.',
+                    labels: Array.isArray(parsed.labels) ? parsed.labels : ['adjacent']
+                };
+                
+                this.cache.set(cacheKey, rationale);
+                return rationale;
+            } catch (parseError) {
+                console.error('Error parsing AI response:', parseError);
+                throw parseError;
+            }
             
         } catch (error) {
             console.error('Error getting AI rationale:', error);
-            // Fallback rationale
+            // Fallback rationale with helpful message
+            let fallbackMessage = 'This quote connects to your previous selection through shared themes and concepts.';
+            
+            if (error.message.includes('401')) {
+                fallbackMessage = 'Invalid API key. Please check your OpenAI API key in Settings.';
+            } else if (error.message.includes('429')) {
+                fallbackMessage = 'Rate limit reached. Please try again in a moment.';
+            } else if (error.message.includes('API request failed')) {
+                fallbackMessage = 'Unable to connect to OpenAI. Please check your internet connection and API key.';
+            }
+            
             return {
                 title: 'Connected Ideas',
-                rationale: 'This quote connects to your previous selection through shared themes and concepts.',
+                rationale: fallbackMessage,
                 labels: ['adjacent']
             };
         }
@@ -436,12 +498,6 @@ class Mapkeeper {
         await this.getSuggestion();
     }
 
-    explainSuggestion() {
-        if (!this.currentSuggestion) return;
-        
-        const explanation = `This suggestion connects to your path because: ${this.currentSuggestion.rationale}`;
-        this.addMessage('assistant', explanation);
-    }
 
     updatePathDisplay() {
         this.pathCount.textContent = `${this.path.length} waypoint${this.path.length !== 1 ? 's' : ''}`;
@@ -863,6 +919,7 @@ class Mapkeeper {
             model: 'gpt-4o-mini',
             temperature: 0.7,
             maxTokens: 150,
+            openaiApiKey: '',
             systemPrompt: `You are Mapkeeper, a thoughtful guide through a personal library of quotes and highlights. Your role is to suggest meaningful connections between ideas, helping users discover unexpected pathways through their own collected wisdom.
 
 When suggesting a quote, provide:
@@ -882,6 +939,7 @@ Be curious, insightful, and respectful of the personal nature of these collected
         this.temperatureSlider.value = this.settings.temperature;
         this.temperatureValue.textContent = this.settings.temperature;
         this.maxTokensInput.value = this.settings.maxTokens;
+        this.openaiApiKeyInput.value = this.settings.openaiApiKey;
         this.systemPromptTextarea.value = this.settings.systemPrompt;
     }
 
@@ -890,6 +948,7 @@ Be curious, insightful, and respectful of the personal nature of these collected
             model: this.modelSelect.value,
             temperature: parseFloat(this.temperatureSlider.value),
             maxTokens: parseInt(this.maxTokensInput.value),
+            openaiApiKey: this.openaiApiKeyInput.value,
             systemPrompt: this.systemPromptTextarea.value
         };
         
